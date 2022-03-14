@@ -1,0 +1,7 @@
+
+BSSID, First time seen, Last time seen, channel, Speed, Privacy, Cipher, Authentication, Power, # beacons, # IV, LAN IP, ID-length, ESSID, Key
+D8:07:B6:52:AC:A6, 2022-03-14 13:56:19, 2022-03-14 13:56:25,  2, 130, WPA2, CCMP, PSK, -26,       57,       49,   0.  0.  0.  0,  13, Zak's Network, 
+
+Station MAC, First time seen, Last time seen, Power, # packets, BSSID, Probed ESSIDs
+A2:0A:30:4C:ED:B8, 2022-03-14 13:56:20, 2022-03-14 13:56:23, -40,       54, D8:07:B6:52:AC:A6,
+

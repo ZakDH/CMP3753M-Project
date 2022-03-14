@@ -1,7 +1,7 @@
 def create_hostapd(iface, essid, channel):
     iface_str= "interface="+str(iface)+"\n"
     body_str= "driver=nl80211\n"
-    body_str+= "ssid="+str(essid)+"1\n"
+    body_str+= "ssid="+str(essid)+"\n"
     body_str+= "hw_mode=g\n"
     body_str+= "channel="+str(channel)+"\n"
     body_str+= "macaddr_acl=0\n"
