@@ -16,12 +16,6 @@ channel_list = []
 def mac_extract():
     data = pd.read_csv('handshake-01.csv')
     mac = data.iloc[2][0]
-    #print(data)
-    #print(mac)
-    #gets mac by removing redundant columns
-    #first_col = data.iloc[:,0]
-    #remove_row = data.iloc[1:,:]
-    #remove_row2 = remove_row.iloc[1:,:]
     return mac
     
 def ap_scanner():
