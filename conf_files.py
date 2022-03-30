@@ -1,7 +1,7 @@
 def create_hostapd(iface, essid, channel):
     iface_str= "interface="+str(iface)+"\n"
     body_str= "driver=nl80211\n"
-    body_str+= "ssid="+str(essid)+"\n"
+    body_str+= "ssid="+str(essid)+"1\n"
     body_str+= "hw_mode=g\n"
     body_str+= "channel=11\n"
     body_str+= "macaddr_acl=0\n"
@@ -34,7 +34,8 @@ def create_dhcpd(essid):
     body_str += '\nsubnet 192.168.2.0 netmask 255.255.255.0 {'
     body_str += '\noption routers 192.168.2.1;'
     body_str += '\noption subnet-mask 255.255.255.0;'
-    body_str += '\noption domain-name '+str(essid)+';'
+    #body_str += '\noption domain-name '+str(essid)+';'
+    body_str += '\noption domain-name test;'
     body_str += '\noption domain-name-servers 192.168.2.1;'
     body_str += '\nrange 192.168.2.2 192.168.2.40;'
     body_str += '\n}' 
