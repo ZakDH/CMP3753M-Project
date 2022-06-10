@@ -41,5 +41,12 @@ for packet in packets:
 i = 0
 while True:  
     sv.send(codecs.decode(tcpconnect1, 'hex'))
-    s.send(codecs.decode(cmd, 'hex'))
-    time.sleep(1)
+    if i < 5:
+        s.send(codecs.decode(cmd, 'hex'))
+        time.sleep(1)
+        i+=1
+    if i > 30:
+        s.send(codecs.decode(cmd1, 'hex'))
+        #i+=1
+    else:
+        s.send(codecs.decode(cmd3, 'hex'))
